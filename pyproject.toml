@@ -1,0 +1,17 @@
+[project]
+name = "proxy"
+version = "2025.9.1"
+description = "A very simple pure python proxy"
+readme = "README.md"
+authors = [
+    { name = "Daniel Engvall", email = "daniel@engvalls.eu" }
+]
+requires-python = ">=3.13"
+dependencies = []
+
+[project.scripts]
+proxy = "proxy.__main__:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
