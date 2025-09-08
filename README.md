@@ -9,5 +9,6 @@ uv tool install git+https://github.com/engdan77/proxy
 
 ### Usage
 ```shell
-proxy
+ALL_PROXY=127.0.0.1:9876  # So that clients use this
+proxy  # Starting the python code
 ```
