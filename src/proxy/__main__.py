@@ -1,13 +1,16 @@
 import asyncio
+import hashlib
 from asyncio import StreamReader, StreamWriter
 import logging
 from re import search, MULTILINE
 import argparse
 
-__version__ = "2025.9.2"
+__version__ = "2025.9.3"
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger('proxy')
+
+cached_hashes = set()
 
 
 async def pipe(r: StreamReader, w: StreamWriter):
@@ -17,8 +20,13 @@ async def pipe(r: StreamReader, w: StreamWriter):
             buffer = await r.read(4096)
             message += buffer
             w.write(buffer)
+            global cached_hashes
+            m = message.decode()
+            h = hashlib.md5(m.encode()).hexdigest()
+            if h not in cached_hashes:
+                logger.debug(f'RESPONSE: {m}')
+            cached_hashes.add(h)
     finally:
-        logger.debug(f'RESPONSE:\n{message.decode()}')
         w.close()
 
 # handle every connection
@@ -33,6 +41,7 @@ async def conn_handler(lr: StreamReader, lw: StreamWriter):
         logger.warning(e)
     logger.debug(f'Got connection from {lw.get_extra_info("peername")[0]}')
     if not data:
+        logger.debug('NO DATA: Connection closed')
         lw.close()
         return
     try:
@@ -52,6 +61,7 @@ async def conn_handler(lr: StreamReader, lw: StreamWriter):
             port = int(port_str) if port_str else 80
             rr, rw = await asyncio.open_connection(host, port)
             rw.write(bytes(data, 'utf-8'))
+            logger.debug(f'Writing data: {data}')
             await rw.drain()
             await asyncio.gather(pipe(lr, rw), pipe(rr, lw))
     except ConnectionResetError as e:
